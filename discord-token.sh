@@ -29,7 +29,7 @@ function validate_tokens() {
 
   while read token; do
     response=$(curl -s -H "Authorization: Bot $token" https://discord.com/api/v6/invite/random-code)
-    echo $response
+
     if [[ "$response" =~ "401: Unauthorized" ]]; then
       echo "Токен $token невалиден"
 
